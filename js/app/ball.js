@@ -1,16 +1,25 @@
-define(['./utils'], function(utils){
-  return function (x, y, vx, vy, speed, radius, mass, color, hitsWalls) {
+define(['./utils', 'matter'], function(utils, Matter){
+  return function (x, y, radius, hitsWalls) {
     return {
-      x:x,
-      y:y,
-      vx: vx,//utils.normalize(2),
-      vy: vy,//utils.normalize(2),
-      speed: speed,
+      colls: 0,
+      minSpeed: 0.001,
+      maxSpeed: 0.02,
+      genForce: function() {
+        v = utils.vectorNormalize(Math.random(), Math.random());
+        return {
+          x: v.x * this.minSpeed,
+          y: v.y * this.minSpeed
+        };
+      },
+      body: Matter.Bodies.circle(x, y, radius, {
+        friction: 0,
+        frictionAir: 0,
+        frictionStatic: 0,
+        restitution: 1
+      }),
       radius: radius,
-      mass: mass,
-      color:color,
       hitsWalls: hitsWalls,
-      hasMoved: false,
+
       move: function() {
         this.hasMoved = true;
         this.moveX();
@@ -25,9 +34,36 @@ define(['./utils'], function(utils){
         this.y += this.vy*this.speed;
       },
       setVelocity: function(x, y, s) {
-        this.vx = x;//utils.normalize(x);
-        this.vy = y;//utils.normalize(y);
-        this.speed = s;
+        norm = utils.vectorNormalize(x, y);
+        mag = utils.vectorMag(x, y);
+
+        this.vx = norm.x;
+        this.vy = norm.y;
+        s*mag<=this.maxSpeed
+        ?
+          s*mag>= this.minSpeed ?
+            this.speed = s*mag
+          :
+            this.speed = minSpeed
+        :
+          this.speed = maxSpeed;
+      },
+      updateVelocity: function () {
+        // console.log(this.colls);
+        // console.log(this.body.velocity);
+        direction = utils.vectorNormalize(this.body.velocity.x, this.body.velocity.y);
+        speed = this.getSpeed(this.colls);
+        newVelocity = {
+          x: direction.x*speed,
+          y: direction.y*speed
+        };
+        console.log(utils.vectorMag(newVelocity.x, newVelocity.y));
+        Matter.Body.setVelocity(this.body, newVelocity);
+      },
+      getSpeed: function(t) {
+        C= 0.02 - 0.001;
+        k= -( Math.log( 1-(0.01899/C) ) / 15);
+        return C*(1-Math.exp(-k*t)) + this.minSpeed;
       },
       draw: function(ctx){
         ctx.beginPath();

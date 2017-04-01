@@ -1,162 +1,136 @@
-// TODO: add functionality such that bouncing off nodewalls/goal makes you go faster and faster so you can hit the goal harder/do more damage. but if you hit environment walls, you lose multiplier/speed.
-// TODO: finish dynamicCircleStaticLineCollision method.
+define([
+  'matter', './nodes', './ball'
+], function(Matter, nodes, ball) {
 
-define(
-['./collisions', './ball', './nodes', './score', './helpText', './utils', 'victor'],
-function (collisions, ball, nodes, score, helpText, utils, victor) {
-  // window.onload = function() {
-    var canvas = document.getElementById('canvas');
-    var ctx = canvas.getContext('2d');
-    var raf;
-    var objs = [];
-    debugBool = false;
-    debug = {data: null};
-    b = ball(300, 100, 1, 0, 100, 7, 7, 'blue', true);
-    //g = ball(400, 100, -2, 0, 1, 30, 30, 'green', false);
-    objs.push(b);
-    // objs.push(g);
+canvas = document.getElementById('canvas');
+ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-    function moveObjWithTempVelocity(obj, tmpVx, tmpVy, tmpS) {
-      t1vx = obj.vx;
-      t1vy = obj.vy;
-      t1s = obj.speed;
+window.onresize = function(e) {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
 
-      obj.setVelocity(tmpVx, tmpVy);
-      obj.speed = tmpS;
-      obj.move();
+  // module aliases
+var Engine = Matter.Engine,
+    World = Matter.World,
+    Render = Matter.Render,
+    Bodies = Matter.Bodies,
+    Body = Matter.Body,
+    Events = Matter.Events,
+    MouseConstraint = Matter.MouseConstraint,
+    Mouse = Matter.Mouse,
+    Composite = Matter.Composite;
 
-      obj.setVelocity(t1vx, t1vy);
-      obj.speed = t1s;
+// create an engine
+var engine = Engine.create();
+engine.world.gravity.x = 0;
+engine.world.gravity.y = 0;
+
+// // create a renderer
+// var render = Render.create({
+//     element: canvas,
+//     engine: engine
+// });
+
+var boxA = ball(35, 60, 10);
+var boxB = ball(450, 100, 10);
+offset=5;
+ground = [
+  Bodies.rectangle(canvas.width/2, -offset, canvas.width+2*offset, 50, { isStatic: true, friction: 0, frictionAir: 0, frictionStatic: 0, restitution: 1 }),
+  Bodies.rectangle(-offset, canvas.height/2, 50, canvas.height+2*offset, { friction: 0, frictionAir: 0, frictionStatic: 0, restitution: 1, isStatic: true }),
+  Bodies.rectangle(canvas.width/2, canvas.height+offset, canvas.width+2*offset, 50, { friction: 0, frictionAir: 0, frictionStatic: 0, restitution: 1, isStatic: true }),
+  Bodies.rectangle(canvas.width+offset, canvas.height/2, 50, canvas.height+2*offset, { friction: 0, frictionAir: 0, frictionStatic: 0, restitution: 1, isStatic: true })
+];
+
+// add all of the bodies to the world
+World.add(engine.world, ground)
+World.add(engine.world, [boxA.body, boxB.body]);
+
+mouseConstraint = MouseConstraint.create(engine, {element: canvas});
+
+Events.on(mouseConstraint, 'mouseup', function(event) {
+  mousePosition = event.mouse.position;
+  newNode = nodes.addNode(mousePosition.x, mousePosition.y);
+  if(newNode) {
+    World.add(engine.world, newNode);
+  }
+});
+
+Events.on(engine, 'collisionEnd', function(event) {
+  pairs = event.pairs;
+  for(i=0; i<pairs.length; i++) {
+    pair = [pairs[i].bodyA, pairs[i].bodyB];
+    if((pair.includes(nodes.getBegin()) || pair.includes(nodes.getEnd())) && pair.includes(boxA.body)) {
+      console.log('collisions with node');
+      boxA.colls++;
+      boxA.updateVelocity();
     }
-
-    function draw() {
-      ctx.clearRect(0,0, canvas.width, canvas.height);
-      score.draw(ctx);
-      for(obj in objs) {
-        objs[obj].draw(ctx);
-      }
-      nodes.draw(ctx);
-      if(debugBool && debug.data) {
-        ctx.fillStyle = 'red';
-        ctx.font = "10px arial";
-        ctx.textAlign = "center";
-        ctx.fillText('a', debug.data.a.x, debug.data.a.y);
-        ctx.fillText('b', debug.data.b.x, debug.data.b.y);
-        ctx.fillText('c', debug.data.c.x, debug.data.c.y);
-        ctx.fillText('d', debug.data.d.x, debug.data.d.y);
-        ctx.fillText('p1', debug.data.p1.x, debug.data.p1.y);
-        ctx.fillText('p2', debug.data.p2.x, debug.data.p2.y);
-        ctx.fillText('ptC', debug.data.ptC.x, debug.data.ptC.y);
-        ctx.fillText('circle', debug.data.circle.x, debug.data.circle.y);
-        ctx.fillText('cV', debug.data.circle.x+debug.data.circle.vx, debug.data.circle.y+debug.data.circle.vy);
-
-        ctx.beginPath();
-        ctx.moveTo(debug.data.a.x, debug.data.a.y);
-        ctx.lineTo(debug.data.circle.x, debug.data.circle.y);
-        ctx.stroke();
-        ctx.closePath();
-
-        ctx.beginPath();
-        ctx.moveTo(debug.data.p1.x, debug.data.p1.y);
-        ctx.lineTo(debug.data.circle.x, debug.data.circle.y);
-        ctx.stroke();
-        ctx.closePath();
-
-        ctx.beginPath();
-        ctx.moveTo(debug.data.p2.x, debug.data.p2.y);
-        ctx.lineTo(debug.data.ptC.x, debug.data.ptC.y);
-        ctx.stroke();
-        ctx.closePath();
-
-        ctx.beginPath();
-        ctx.moveTo(debug.data.circle.x, debug.data.circle.y);
-        ctx.lineTo(debug.data.circle.x+debug.data.circle.r, debug.data.circle.y);
-        ctx.stroke();
-        ctx.closePath();
-
-        ctx.beginPath();
-        ctx.moveTo(debug.data.circle.x, debug.data.circle.y);
-        ctx.lineTo(debug.data.circle.x+debug.data.circle.vx, debug.data.circle.y+debug.data.circle.vy);
-        ctx.stroke();
-        ctx.closePath();
-      }
+    else if(pair.includes(wall) && pair.includes(boxA.body)) {
+      console.log("collision with wall");
+      boxA.colls++;
+      boxA.updateVelocity();
     }
+    else if (pair.includes(boxA.body) && (ground.includes(pair[0]) || ground.includes(pair[1]))) {
+      console.log('collision with bounds');
+      boxA.colls = 0;
+      boxA.updateVelocity();
 
-    function tick() {
-      for(i=0; i<objs.length; i++) {
-        obj1 = objs[i];
-        obj1.hasMoved = false;
-        if(obj1.hitsWalls && nodes.active()) {
-          collResult = collisions.dynamicCircleStaticLineCollision(nodes.getBegin().x, nodes.getBegin().y, nodes.getEnd().x, nodes.getEnd().y, obj1.x, obj1.y, obj1.vx, obj1.vy, obj1.radius, obj1.speed, obj1.mass, ctx);
-
-          if(collResult.collide) {
-            if(debugBool) {
-              debug.data = collResult.debug;
-              console.log('debug changed');
-              console.log(debug);
-            }
-            moveObjWithTempVelocity(obj1, collResult.vxT, collResult.vyT, 1);
-            obj1.setVelocity(collResult.postColl.vx, collResult.postColl.vy, obj1.speed);
-          }
-        }
-        for(j=i+1; j<objs.length; j++) {
-          obj2 = objs[j];
-          collResult = collisions.dynamicDynamicCircleCollision(obj1.x, obj1.y, obj2.x, obj2.y, obj1.radius, obj2.radius, obj1.vx, obj1.vy, obj2.vx, obj2.vy);
-          if(collResult.collide) {
-            moveObjWithTempVelocity(obj1, collResult.c1.vx, collResult.c1.vy, 1);
-            moveObjWithTempVelocity(obj2, collResult.c2.vx, collResult.c2.vy, 1);
-
-            // obj2.color = 'red';
-            score.num += 1;
-
-            //do something with collision point later
-            collisionX = (obj1.x * obj2.radius) +(obj2.x * obj1.radius) / (obj1.radius + obj2.radius);
-            collisionY = (obj1.y * obj2.radius) +(obj2.y * obj1.radius) / (obj1.radius + obj2.radius);
-
-            postColl = collisions.getPostCollisionVelocitiesCircleCircle(obj1.x, obj1.y, obj2.x, obj2.y, obj1.vx, obj1.vy, obj2.vx, obj2.vy, obj1.mass, obj2.mass);
-            obj1.setVelocity(postColl.b1.vx, postColl.b1.vy);
-            obj2.setVelocity(postColl.b2.vx, postColl.b2.vy);
-          }
-        }
-        if (obj1.y + obj1.radius > canvas.height || obj1.y - obj1.radius < 0){
-          obj1.setVelocity(obj1.vx, -obj1.vy, obj1.speed);
-        }
-        if (obj1.x + obj1.radius > canvas.width || obj1.x - obj1.radius < 0){
-          obj1.setVelocity(-obj1.vx, obj1.vy, obj1.speed);
-        }
-        if(!obj1.hasMoved) {
-          obj1.move();
-        }
-      }
-
-      draw();
-      if(debugBool) {
-          setTimeout(function() {
-            // console.log(arguments);
-            raf = window.requestAnimationFrame(tick);
-          }, 1000, objs);
-
-      }
-      else {
-        raf = window.requestAnimationFrame(tick);
-      }
     }
+    else if(pair.includes(boxA.body) && pair.includes(boxB.body)) {
+      console.log('collision with ball');
+      boxA.colls++;
+      boxA.updateVelocity();
+    }
+  }
+});
 
-    document.addEventListener('keydown', function(e) {
-      if (/[0-9]/.test(e.key)) {
-        nodes.turnOn(e.key);
-      }
-    });
-    document.addEventListener('keyup', function(e) {
-      if (/[0-9]/.test(e.key)) {
-        nodes.turnOff(e.key);
-      }
-    });
-    document.addEventListener('click', function(e) {
-      nodes.addNode(e.clientX, e.clientY);
-    });
+// run the engine
+Engine.run(engine);
 
-    draw();
-    raf = window.requestAnimationFrame(tick);
-  // };
+(
+  function render() {
+    bodies = Composite.allBodies(engine.world);
+
+    window.requestAnimationFrame(render);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.beginPath();
+    for(i=0; i<bodies.length; i++) {
+      vertices = bodies[i].vertices;
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      for(j=0; j<vertices.length; j++) {
+        ctx.lineTo(vertices[j].x, vertices[j].y);
+      }
+      ctx.lineTo(vertices[0].x, vertices[0].y);
+    }
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fill();
+})();
+wall = null;
+wallPlaced = false;
+document.addEventListener('keydown', function(e) {
+  if (/[0-9]/.test(e.key)) {
+    nodes.turnOn(e.key);
+    if(nodes.wallActive() && !wallPlaced) {
+      wall= nodes.getWall();
+      World.add(engine.world, wall);
+      wallPlaced = true;
+    }
+  }
+});
+document.addEventListener('keyup', function(e) {
+  if (/[0-9]/.test(e.key)) {
+    nodes.turnOff(e.key);
+    if(!nodes.wallActive() && wallPlaced) {
+      World.remove(engine.world, wall);
+      wall = null;
+      wallPlaced = false;
+    }
+  }
+});
+Body.applyForce(boxA.body, boxA.body.position, boxA.genForce());
 });

@@ -1,4 +1,4 @@
-define(['victor'], function(victor) {
+define(['victor', './utils'], function(victor, utils) {
   return {
     distance: function (x1, y1, x2, y2) {
       dx = x2 - x1;
@@ -30,7 +30,7 @@ define(['victor'], function(victor) {
         return true;
       }
       return false;
-    }
+    },
     closestPointOnLineToPoint: function(x1L, y1L, x2L, y2L, x, y) {
       // based off code from http://ericleong.me/research/line-line/
       a1 = y2L - y1L;
@@ -119,39 +119,42 @@ define(['victor'], function(victor) {
       }
       return {collide: false, vxT:cvx, vyT:cvx, postColl: {}};
     },
-    dynamicDynamicCircleCollision: function(c1x, c1y, c2x, c2y, c1r, c2r, c1vx, c1vy, c2vx, c2vy) {
+    dynamicDynamicCircleCollision: function(c1x, c1y, c2x, c2y, c1r, c2r, c1vx, c1vy, c1s, c1m, c2vx, c2vy, c2s, c2m) {
       // based off of code from http://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php
-      c1v = new victor(c1vx, c1vy);
-      c2v = new victor(c2vx, c2vy);
+      c1v = new victor(c1vx*c1s, c1vy*c1s);
+      c2v = new victor(c2vx*c2s, c2vy*c2s);
 
       relV = c1v.subtract(c2v);
-      collResult = this.dynamicStaticCircleCollision(c1x, c1y, c2x, c2y, c1r, c2r, c1vx, c1vy);
+      collResult = this.dynamicStaticCircleCollision(c1x, c1y, c2x, c2y, c1r, c2r, c1vx, c1vy, c1s);
       if(collResult.collide) {
         coll = new victor(collResult.x, collResult.y);
         mult = coll.length() / relV.length();
+        postColl = this.getPostCollisionVelocitiesCircleCircle(c1x, c1y, c2x, c2y, c1vx, c1vy, c2vx, c2vy, c1m, c2m, c1s, c2s);
         return {
           collide: true,
           c1: {vx:c1v.x*mult, vy:c1v.y*mult},
-          c2: {vx:c2v.x*mult, vy:c2v.y*mult}
+          c2: {vx:c2v.x*mult, vy:c2v.y*mult},
+          postColl: postColl
         };
       }
       else {
         return {
           collide: false,
           c1: {vx:c1vx, vy:c1vy},
-          c2: {vx:c2vx, vy:c2vy}
+          c2: {vx:c2vx, vy:c2vy},
+          postColl: {}
         };
       }
     },
-    dynamicStaticCircleCollision: function (c1x, c1y, c2x, c2y, c1r, c2r, c1vx, c1vy) {
+    dynamicStaticCircleCollision: function (c1x, c1y, c2x, c2y, c1r, c2r, c1vx, c1vy, c1s, c1m) {
       // based off of code from http://www.gamasutra.com/view/feature/131424/pool_hall_lessons_fast_accurate_.php
-      c1v = new victor(c1vx, c1vy);
+      c1v = new victor(c1vx*c1s, c1vy*c1s);
       c1Pos = new victor(c1x, c1y);
       c2Pos = new victor(c2x, c2y);
       dist = this.distance(c1x, c1y, c2x, c2y) - (c1r+c2r);
 
       if(c1v.magnitude() < dist) {
-        return {collide:false, vx:c1v.x, vy:c1v.y};
+        return {collide:false, vx:c1v.x, vy:c1v.y, postColl: {}};
       }
 
       n = new victor().copy(c1v);
@@ -159,52 +162,52 @@ define(['victor'], function(victor) {
       c = c2Pos.subtract(c1Pos);
       d = n.dot(c);
       if(d <= 0) {
-        return {collide:false, vx:c1v.x, vy:c1v.y};
+        return {collide:false, vx:c1v.x, vy:c1v.y, postColl: {}};
       }
 
       cLen = c.magnitude();
       f = (cLen *cLen) - (d*d);
       sumRadiiSquared = (c1r+c2r) * (c1r+c2r);
       if(f >= sumRadiiSquared) {
-        return {collide:false, vx:c1v.x, vy:c1v.y};
+        return {collide:false, vx:c1v.x, vy:c1v.y, postColl: {}};
       }
 
       t = sumRadiiSquared - f;
       if(t < 0) {
-        return {collide:false, vx:c1v.x, vy:c1v.y};
+        return {collide:false, vx:c1v.x, vy:c1v.y, postColl: {}};
       }
 
       distToTravel = d - Math.sqrt(t);
       mag = c1v.magnitude();
       if(mag < distToTravel) {
-        return {collide:false, vx:c1v.x, vy:c1v.y};
+        return {collide:false, vx:c1v.x, vy:c1v.y, postColl: {}};
       }
 
       c1v = c1v.normalize();
       c1v.x *= distToTravel;
       c1v.y *= distToTravel;
 
-      return {collide:true, vx:c1v.x, vy:c1v.y};
+      postColl = this.getPostCollisionVelocitiesCircleCircle(c1x, c1y, c2x, c2y, c1vx, c1vy, 0, 0, c1m, 0, c1s, 0);
+      return {collide:true, vxT:c1v.x, vyT:c1v.y, postColl: postColl.c1};
     },
-    getPostCollisionVelocitiesCircleCircle(b1x, b1y, b2x, b2y, b1vx, b1vy, b2vx, b2vy, b1m, b2m) {
-      b = new victor(b1x, b1y);
-      g = new victor(b2x, b2y);
-      v1 = new victor(b1vx, b1vy);
-      v2 = new victor(b2vx, b2vy);
-      n= b.subtract(g);
-      n= n.normalize();
+    getPostCollisionVelocitiesCircleCircle(c1x, c1y, c2x, c2y, c1vx, c1vy, c2vx, c2vy, c1m, c2m, c1s, c2s) {
+      b = new victor(c1x, c1y);
+      g = new victor(c2x, c2y);
+      v1 = new victor(c1vx*c1s, c1vy*c1s);
+      v2 = new victor(c2vx*c2s, c2vy*c2s);
+      n= b.subtract(g).normalize();
       dot1 = v1.dot(n);
       dot2 = v2.dot(n);
 
-      oP = (2 * (dot1 - dot2)) / (b1m + b2m);
+      oP = (2 * (dot1 - dot2)) / (c1m + c2m);
 
-      x1 = v1.x - oP * b2m * n.x;
-      y1 = v1.x - oP * b2m * n.y;
+      x1 = v1.x - oP * c2m * n.x;
+      y1 = v1.x - oP * c2m * n.y;
 
-      x2 = v2.x + oP * b1m * n.x;
-      y2 = v2.x + oP * b1m * n.y;
+      x2 = v2.x + oP * c1m * n.x;
+      y2 = v2.x + oP * c1m * n.y;
 
-      return {b1: {vx:x1, vy:y1}, b2:{vx:x2, vy:y2}};
+      return {c1: {vx:x1, vy:y1}, c2:{vx:x2, vy:y2}};
     },
   }
 });
