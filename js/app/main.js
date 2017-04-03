@@ -67,7 +67,7 @@ Events.on(engine, 'collisionStart', function(event) {
         console.log('collisions with node');
         boxA.colls++;
       }
-      else if(pair.includes(wall)) {
+      else if(pair.includes(nodes.wall)) {
         console.log("collision with wall");
         boxA.colls++;
       }
@@ -96,30 +96,33 @@ Engine.run(engine);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for(i=0; i<bodies.length; i++) {
-
-      utils.drawByVertices(bodies[i], ctx);
+      body = bodies[i];
+      nodes.draw(ctx);
+      boxA.draw(ctx);
+      if(
+        body !== boxA.body &&
+        // body !== boxB.body &&
+        !nodes.nodes.includes(body) &&
+        body !== nodes.wall
+      ) {
+        utils.drawByVertices(body, ctx);
+      }
     }
 })();
 
-wall = null;
-wallPlaced = false;
 document.addEventListener('keydown', function(e) {
   if (/[0-9]/.test(e.key)) {
-    nodes.turnOn(e.key);
-    if(nodes.wallActive() && !wallPlaced) {
-      wall= nodes.getWall();
+    wall = nodes.turnOn(e.key);
+    if(wall && !Composite.allBodies(engine.world).includes(wall)) {
       World.add(engine.world, wall);
-      wallPlaced = true;
     }
   }
 });
 document.addEventListener('keyup', function(e) {
   if (/[0-9]/.test(e.key)) {
-    nodes.turnOff(e.key);
-    if(!nodes.wallActive() && wallPlaced) {
+    wall = nodes.turnOff(e.key);
+    if(wall) {
       World.remove(engine.world, wall);
-      wall = null;
-      wallPlaced = false;
     }
   }
 });

@@ -63,11 +63,18 @@ define(['./utils', 'matter'], function(utils, Matter){
         return C*(1-Math.exp(-k*t)) + this.minSpeed;
       },
       draw: function(ctx){
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2, true);
-        ctx.closePath();
+        tmpFill = ctx.fillStyle;
         ctx.fillStyle = this.color;
-        ctx.fill();
+        utils.drawByVertices(this.body, ctx);
+
+        //draw movement vector
+        ctx.beginPath();
+        ctx.moveTo(this.body.position.x, this.body.position.y);
+        ctx.lineTo(this.body.position.x+(this.body.velocity.x*this.body.speed*5), this.body.position.y+(this.body.velocity.y*this.body.speed*5));
+        ctx.stroke();
+        ctx.closePath();
+
+        ctx.fillStyle = tmpFill;
       }
     }
   };

@@ -9,6 +9,7 @@ define(['matter', './utils'], function(Matter, utils) {
     nodeActive: function() {
       return this.pair.length == 1 || this.wallActive();
     },
+    wall:null,
     nodes:[
     ],
     pair:[],
@@ -24,11 +25,20 @@ define(['matter', './utils'], function(Matter, utils) {
     turnOn: function(index) {
       if(!this.pair.includes(index) && this.pair.length < 2 && index < this.nodes.length) {
         this.pair.push(index);
+        if(this.wallActive()) {
+          this.wall = this.genWall();
+        }
+        return this.wall;
       }
     },
     turnOff: function(index) {
       if(this.pair.includes(index)) {
         this.pair.splice(this.pair.indexOf(index), 1);
+        tmpwall = this.wall;
+        if(!this.wallActive()) {
+          this.wall = null;
+        }
+        return tmpwall;
       }
     },
     addNode: function(x, y) {
@@ -39,7 +49,7 @@ define(['matter', './utils'], function(Matter, utils) {
       }
       return null;
     },
-    getWall: function() {
+    genWall: function() {
       pts = [];
       if(this.wallActive()) {
         dx= this.getEnd().position.x - this.getBegin().position.x;
@@ -77,27 +87,27 @@ define(['matter', './utils'], function(Matter, utils) {
       return null;
     },
     draw: function(ctx) {
-      for (node in this.nodes){
-        ctx.beginPath();
-        ctx.arc(this.nodes[node].x, this.nodes[node].y, this.radius, 0, Math.PI*2, true);
-        ctx.closePath();
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.fillStyle = this.text_color;
-        ctx.font = "10px arial";
-        ctx.textAlign = "center";
-        ctx.fillText(node, this.nodes[node].x, this.nodes[node].y+3);
-      }
       if(this.wallActive()) {
         this.drawWall(ctx);
       }
+      for (node in this.nodes){
+        tmpFill = ctx.fillStyle;
+        ctx.fillStyle = this.color;
+        utils.drawByVertices(this.nodes[node], ctx);
+
+        ctx.fillStyle = this.text_color;
+        ctx.font = "10px arial";
+        ctx.textAlign = "center";
+        ctx.fillText(node, this.nodes[node].position.x, this.nodes[node].position.y+3);
+
+        ctx.fillStyle = tmpFill;
+      }
     },
     drawWall: function(ctx) {
-      ctx.beginPath();
-      ctx.moveTo(this.nodes[this.pair[0]].x, this.nodes[this.pair[0]].y);
-      ctx.lineTo(this.nodes[this.pair[1]].x, this.nodes[this.pair[1]].y);
-      ctx.stroke();
-      ctx.closePath();
+      tmpFill = ctx.fillStyle;
+      ctx.fillStyle = this.color;
+      utils.drawByVertices(this.wall, ctx);
+      ctx.fillStyle = tmpFill;
     }
   }
 });

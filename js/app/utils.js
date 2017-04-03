@@ -28,5 +28,6 @@ define ({
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.fill();
+    ctx.closePath();
   }
 });
