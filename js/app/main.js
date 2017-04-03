@@ -1,6 +1,6 @@
 define([
-  'matter', './nodes', './ball'
-], function(Matter, nodes, ball) {
+  'matter', './nodes', './ball', './utils'
+], function(Matter, nodes, ball, utils) {
 
 canvas = document.getElementById('canvas');
 ctx = canvas.getContext("2d");
@@ -46,7 +46,7 @@ ground = [
 
 // add all of the bodies to the world
 World.add(engine.world, ground)
-World.add(engine.world, [boxA.body, boxB.body]);
+World.add(engine.world, [boxA.body]);//, boxB.body]);
 
 mouseConstraint = MouseConstraint.create(engine, {element: canvas});
 
@@ -58,30 +58,26 @@ Events.on(mouseConstraint, 'mouseup', function(event) {
   }
 });
 
-Events.on(engine, 'collisionEnd', function(event) {
+Events.on(engine, 'collisionStart', function(event) {
   pairs = event.pairs;
   for(i=0; i<pairs.length; i++) {
     pair = [pairs[i].bodyA, pairs[i].bodyB];
-    if((pair.includes(nodes.getBegin()) || pair.includes(nodes.getEnd())) && pair.includes(boxA.body)) {
-      console.log('collisions with node');
-      boxA.colls++;
-      boxA.updateVelocity();
-    }
-    else if(pair.includes(wall) && pair.includes(boxA.body)) {
-      console.log("collision with wall");
-      boxA.colls++;
-      boxA.updateVelocity();
-    }
-    else if (pair.includes(boxA.body) && (ground.includes(pair[0]) || ground.includes(pair[1]))) {
-      console.log('collision with bounds');
-      boxA.colls = 0;
-      boxA.updateVelocity();
-
-    }
-    else if(pair.includes(boxA.body) && pair.includes(boxB.body)) {
-      console.log('collision with ball');
-      boxA.colls++;
-      boxA.updateVelocity();
+    if(pair.includes(boxA.body)) {
+      if(pair.includes(nodes.getBegin()) || pair.includes(nodes.getEnd())) {
+        console.log('collisions with node');
+        boxA.colls++;
+      }
+      else if(pair.includes(wall)) {
+        console.log("collision with wall");
+        boxA.colls++;
+      }
+      else if (ground.includes(pair[0]) || ground.includes(pair[1])) {
+        boxA.colls = 0;
+      }
+      else if(pair.includes(boxB.body)) {
+        console.log('collision with ball');
+        boxA.colls++;
+      }
     }
   }
 });
@@ -91,25 +87,20 @@ Engine.run(engine);
 
 (
   function render() {
+    boxA.updateVelocity();
+    Body.setAngle(boxA.body, 0);
     bodies = Composite.allBodies(engine.world);
 
     window.requestAnimationFrame(render);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.beginPath();
     for(i=0; i<bodies.length; i++) {
-      vertices = bodies[i].vertices;
-      ctx.moveTo(vertices[0].x, vertices[0].y);
-      for(j=0; j<vertices.length; j++) {
-        ctx.lineTo(vertices[j].x, vertices[j].y);
-      }
-      ctx.lineTo(vertices[0].x, vertices[0].y);
+
+      utils.drawByVertices(bodies[i], ctx);
     }
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fill();
 })();
+
 wall = null;
 wallPlaced = false;
 document.addEventListener('keydown', function(e) {
@@ -132,5 +123,6 @@ document.addEventListener('keyup', function(e) {
     }
   }
 });
-Body.applyForce(boxA.body, boxA.body.position, boxA.genForce());
+
+Body.applyForce(boxA.body, boxA.body.position, {x:0.000001, y:0.000002});
 });
