@@ -2,8 +2,8 @@ define(['./utils', 'matter'], function(utils, Matter){
   return function (x, y, radius, hitsWalls) {
     return {
       colls: 0,
-      minSpeed: 0.001,
-      maxSpeed: 0.02,
+      minSpeed: 2,
+      maxSpeed: 30,
       genForce: function() {
         v = utils.vectorNormalize(Math.random(), Math.random());
         return {
@@ -49,20 +49,17 @@ define(['./utils', 'matter'], function(utils, Matter){
           this.speed = maxSpeed;
       },
       updateVelocity: function () {
-        // console.log(this.colls);
-        // console.log(this.body.velocity);
         direction = utils.vectorNormalize(this.body.velocity.x, this.body.velocity.y);
         speed = this.getSpeed(this.colls);
         newVelocity = {
           x: direction.x*speed,
           y: direction.y*speed
         };
-        console.log(utils.vectorMag(newVelocity.x, newVelocity.y));
         Matter.Body.setVelocity(this.body, newVelocity);
       },
       getSpeed: function(t) {
-        C= 0.02 - 0.001;
-        k= -( Math.log( 1-(0.01899/C) ) / 15);
+        C= this.maxSpeed - this.minSpeed;
+        k= -( Math.log( 1-((C-0.0001)/C) ) / 60);
         return C*(1-Math.exp(-k*t)) + this.minSpeed;
       },
       draw: function(ctx){
@@ -71,13 +68,6 @@ define(['./utils', 'matter'], function(utils, Matter){
         ctx.closePath();
         ctx.fillStyle = this.color;
         ctx.fill();
-
-        //draw movement vector
-        // ctx.beginPath();
-        // ctx.moveTo(this.x, this.y);
-        // ctx.lineTo(this.x+(this.vx*this.speed), this.y+(this.vy*this.speed));
-        // ctx.stroke();
-        // ctx.closePath();
       }
     }
   };
