@@ -1,9 +1,17 @@
 define ({
-  randInt: function (max, min) {
+  randInt: function (min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
-    num = Math.floor(Math.random() * (max - min)) + min;
+    num = Math.floor(Math.random() * (max - min + 1)) + min;
     return num;
+  },
+  randNum: function(min, max) {
+    return (Math.random() * (max - min)) + min;
+  },
+  distance: function (x1, y1, x2, y2) {
+    dx = x2 - x1;
+    dy = y2 - y1;
+    return Math.sqrt((dx*dx) + (dy*dy));
   },
   vectorMag: function(x, y) {
     return Math.sqrt((x*x) + (y*y));
@@ -15,6 +23,12 @@ define ({
     :
       r= {x:x, y:y};
     return r;
+  },
+  applyForceTowardPt: function(x1, y1, x2, y2, mag) {
+    x= x1 - x2;
+    y= y1 - y2;
+    dir= this.vectorNormalize(x,y);
+    return {x:dir.x*mag, y:dir.y*mag};
   },
   drawByVertices: function(body, ctx) {
     ctx.beginPath();
@@ -29,5 +43,10 @@ define ({
     ctx.stroke();
     ctx.fill();
     ctx.closePath();
+  },
+  getIncreasingExponentialDecay: function(C, t, rate, base) {
+    C= C - base;
+    k= -( Math.log( 1-((C-0.0001)/C) ) / rate);
+    return C*(1-Math.exp(-k*t)) + base;
   }
 });
