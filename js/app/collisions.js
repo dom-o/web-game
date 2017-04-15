@@ -1,10 +1,5 @@
 define(['victor', './utils'], function(victor, utils) {
   return {
-    distance: function (x1, y1, x2, y2) {
-      dx = x2 - x1;
-      dy = y2 - y1;
-      return Math.sqrt((dx*dx) + (dy*dy));
-    },
     lineLineCollision: function(x1, y1, x2, y2, x3, y3, x4, y4) {
       //based on code from http://www.jeffreythompson.org/collision-detection/line-line.php
       uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));

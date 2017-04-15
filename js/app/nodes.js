@@ -14,8 +14,9 @@ define(['matter', './utils'], function(Matter, utils) {
     ],
     pair:[],
     radius: 7,
+    nodeCategory: 0x0002,
     color: 'black',
-    text_color: "white",
+    text_color: 'white',
     getBegin: function () {
       return this.nodes[this.pair[0]];
     },
@@ -43,7 +44,12 @@ define(['matter', './utils'], function(Matter, utils) {
     },
     addNode: function(x, y) {
       if(!this.placed()) {
-        node = Matter.Bodies.circle(x, y, this.radius, {isStatic: true});
+        node = Matter.Bodies.circle(x, y, this.radius, {
+          isStatic: true,
+          collisionFilter: {
+            category: this.nodeCategory
+          }
+        });
         this.nodes.push(node);
         return node;
       }
@@ -77,10 +83,13 @@ define(['matter', './utils'], function(Matter, utils) {
           position: Matter.Vertices.centre(pts),
           vertices: pts,
           isStatic: true,
-          friction: 0,
-          frictionAir: 0,
-          frictionStatic: 0,
-          restitution: 1
+          collisionFilter: {
+            category: this.nodeCategory
+          }
+          // friction: 0,
+          // frictionAir: 0,
+          // frictionStatic: 0,
+          // restitution: 1
         });
         return wall;
       }
