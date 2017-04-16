@@ -14,7 +14,6 @@ define(['matter', './utils'], function(Matter, utils) {
     ],
     pair:[],
     radius: 7,
-    nodeCategory: 0x0002,
     color: 'black',
     text_color: 'white',
     getBegin: function () {
@@ -47,7 +46,7 @@ define(['matter', './utils'], function(Matter, utils) {
         node = Matter.Bodies.circle(x, y, this.radius, {
           isStatic: true,
           collisionFilter: {
-            category: this.nodeCategory
+            category: utils.constants.NODE_COLLISION
           }
         });
         this.nodes.push(node);
@@ -84,7 +83,7 @@ define(['matter', './utils'], function(Matter, utils) {
           vertices: pts,
           isStatic: true,
           collisionFilter: {
-            category: this.nodeCategory
+            category: utils.constants.NODE_COLLISION
           }
           // friction: 0,
           // frictionAir: 0,

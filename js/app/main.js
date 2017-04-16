@@ -1,6 +1,6 @@
 define([
-  'matter', './nodes', './ball', './utils', './boss', './movementPatterns'
-], function(Matter, nodes, ball, utils, boss, movementPatterns) {
+  'matter', './nodes', './ball', './utils', './boss', './movementPatterns', './boxGen', './draw'
+], function(Matter, nodes, ball, utils, boss, movementPatterns, boxGen, draw) {
 // TODO: add collision filter so boxB doesn't hit walls
 // TODO: add health/score calc to game
 // TODO: add a couple different movement patterns to boxB
@@ -31,29 +31,17 @@ var Engine = Matter.Engine,
     Events = Matter.Events,
     MouseConstraint = Matter.MouseConstraint,
     Mouse = Matter.Mouse,
-    Composite = Matter.Composite;
+    Composite = Matter.Composite
+    constants = utils.constants;
 
 // create an engine
 var engine = Engine.create();
 engine.world.gravity.x = 0;
 engine.world.gravity.y = 0;
+var boxA = boxGen.genPlayer(canvas.width, canvas.height);
+var boxB = boxGen.genBoss(boxA.body, canvas.width, canvas.height, constants.BOUNCE, constants.SLOW, constants.IGNORE_NODES, constants.BOSS_RADIUS, constants.BOSS_HEALTH, constants.BOSS_DRAW);
 
-var boxA = boss(35, 60, 10, 100, movementPatterns.bounce);
-// var boxB = boss(450, 100, 25, 100, movementPatterns.pulse);
-// var boxC = boss(100, 100, 50, 100, movementPatterns.followPoint, ctx);
-// var boxB = boss(100, 100, 5, 100, movementPatterns.followObj);
-var boxB = boss(35, 60, 5, 100, movementPatterns.avoidObj);
-
-boxA.movementPattern.init(boxA.body, 2, 30, 80);
-// boxB.movementPattern.init(boxB.body, 5);
-// boxC.movementPattern.init(boxC.body, canvas.width, canvas.height, 30);
-// boxB.movementPattern.init(boxB.body, boxA.body, 5);
-boxB.movementPattern.init(boxB.body, boxA.body, engine.world);
-
-boxA.body.collisionFilter.mask = 0x0001 | nodes.nodeCategory;
-boxB.body.collisionFilter.mask = 0x0001;
-
-offset=5;
+offset=25;
 ground = [
   Bodies.rectangle(canvas.width/2, -offset, canvas.width+2*offset, 50, { isStatic: true, friction: 0, frictionAir: 0, frictionStatic: 0, restitution: 1 }),
   Bodies.rectangle(-offset, canvas.height/2, 50, canvas.height+2*offset, { friction: 0, frictionAir: 0, frictionStatic: 0, restitution: 1, isStatic: true }),
@@ -63,7 +51,7 @@ ground = [
 
 // add all of the bodies to the world
 World.add(engine.world, ground);
-World.add(engine.world, [boxA.body, boxB.body]);//, boxC.body, boxD.body, boxE.body]);
+World.add(engine.world, [boxA.body, boxB.body]);
 importantBodies.push(boxA.body);
 importantBodies.push(boxB.body);
 
@@ -83,7 +71,7 @@ Events.on(engine, 'collisionEnd', function(event) {
   for(i=0; i<pairs.length; i++) {
     pair = [pairs[i].bodyA, pairs[i].bodyB];
     if(pair.includes(boxA.body)) {
-      boxA.movementPattern.colls++;
+      boxA.movementPattern.t++;
       scoreT++;
       mult= utils.getIncreasingExponentialDecay(scoreC, scoreT, scoreRate, scoreBase);
 
@@ -92,7 +80,7 @@ Events.on(engine, 'collisionEnd', function(event) {
       else if(pair.includes(nodes.wall)) {
       }
       else if (ground.includes(pair[0]) || ground.includes(pair[1])) {
-        boxA.movementPattern.colls = 0;
+        boxA.movementPattern.t = 0;
         scoreT=0;
       }
       else if(pair.includes(boxB.body)) {
@@ -110,9 +98,6 @@ Engine.run(engine);
   function render() {
     boxA.movementPattern.update();
     boxB.movementPattern.update();
-    // boxC.movementPattern.update();
-    // boxD.movementPattern.update();
-    // boxE.movementPattern.update();
 
     bodies = Composite.allBodies(engine.world);
 
