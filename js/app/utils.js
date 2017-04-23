@@ -8,11 +8,11 @@ define ({
     PLAYER_SPEED: 5,
     SPEEDS: [
         {minSpeed:1, maxSpeed:2},
-        {minSpeed:6, maxSpeed:8},
-        {minSpeed:11, maxSpeed:14},
+        {minSpeed:5, maxSpeed:7},
+        {minSpeed:9, maxSpeed:12},
+        {minSpeed:12, maxSpeed:16},
         {minSpeed:16, maxSpeed:20},
-        {minSpeed:21, maxSpeed:25},
-        {minSpeed:3, maxSpeed:28}
+        {minSpeed:4, maxSpeed:25}
     ],
 
     PULSE: 0,
@@ -41,7 +41,8 @@ define ({
     DISTANCE_OFFSET: 1.5,
 
     BOSS_DRAW:0,
-    PLAYER_DRAW:1
+    PLAYER_DRAW:1,
+    BASE_DAMAGE: 10
   },
   randInt: function (min, max) {
     min = Math.ceil(min);

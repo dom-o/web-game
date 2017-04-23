@@ -13,7 +13,7 @@ define(['./utils', 'matter', './draw'], function(utils, Matter, draw){
         restitution: 1,
         inertia: Infinity
       }),
-      draw: draw.styles[drawStyle]
+      draw: draw.styles[drawStyle],
     }
   };
 });

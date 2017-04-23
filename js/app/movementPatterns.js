@@ -36,9 +36,10 @@ define(['./utils', 'matter'], function(utils, Matter){
       init: function() {
         this.interval = setInterval(function() {
           speed = utils.getIncreasingExponentialDecay(this.maxSpeed, this.t, utils.constants.RATE, this.minSpeed);
-          newVelocity = vectorSetMag(this.body.velocity.x, this.body.velocity.y, speed);
+          newVelocity = utils.vectorSetMag(this.body.velocity.x, this.body.velocity.y, speed);
           Matter.Body.setVelocity(this.body, newVelocity);
           this.t++;
+          console.log(this.body);
         }.bind(this), 1000*utils.constants.SECONDS_PER_INTERVAL);
         Matter.Body.applyForce(this.body, this.body.position, {x:0.005, y:0});
       },

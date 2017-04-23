@@ -2,36 +2,8 @@ define(['./utils', 'matter', './boss', './movementPatterns'], function(utils, Ma
   return {
     genBoss: function(player, worldWidth, worldHeight, movement, speed, nodeReaction, size, health, draw) {
       constants= utils.constants;
-      args={};
-      switch(movement) {
-        case constants.PULSE:
-          args= {};
-        break;
-        case constants.FOLLOW_OBJ:
-          args= {
-            avoid: false,
-            other: player
-          };
-        break;
-        case constants.AVOID_OBJ:
-          args= {
-            avoid: true,
-            other: player
-          };
-        break;
-        case constants.FOLLOW_PT:
-          args= {
-            width: worldWidth,
-            height: worldHeight
-          };
-        break;
-        case constants.BOUNCE:
-          args= {};
-        break;
-        case constants.PLAYER:
-          args= {};
-        break;
-      }
+      args=this.getArgsForMovement(movement, player);
+
       movement = Math.abs(movement);
 
       genBoss= boss(
@@ -66,6 +38,47 @@ define(['./utils', 'matter', './boss', './movementPatterns'], function(utils, Ma
     player.movementPattern = move;
     player.body.collisionFilter.mask = constants.DEFAULT_COLLISION | constants.NODE_COLLISION;
     return player;
+  },
+  genRandom: function(player, worldWidth, worldHeight) {
+    constants= utils.constants;
+
+    speed = utils.randInt(0, 4);
+    nodeReaction = utils.randInt(0, 2);
+    movement = utils.randInt(-1, 2);
+
+    return this.genBoss(player, worldWidth, worldHeight, movement, speed, nodeReaction, constants.BOSS_RADIUS, constants.BOSS_HEALTH, constants.BOSS_DRAW);
+  },
+  getArgsForMovement: function(movement, player) {
+    switch(movement) {
+      case constants.PULSE:
+        return {};
+      break;
+      case constants.FOLLOW_OBJ:
+        return {
+          avoid: false,
+          other: player
+        };
+      break;
+      case constants.AVOID_OBJ:
+        return {
+          avoid: true,
+          other: player
+        };
+      break;
+      case constants.FOLLOW_PT:
+        return {
+          width: worldWidth,
+          height: worldHeight
+        };
+      break;
+      case constants.BOUNCE:
+        return {};
+      break;
+      case constants.PLAYER:
+        return {};
+      break;
+    }
+    return {};
   }
 }
 })

@@ -1,6 +1,6 @@
 define([
-  'matter', './nodes', './ball', './utils', './boss', './movementPatterns', './boxGen', './draw'
-], function(Matter, nodes, ball, utils, boss, movementPatterns, boxGen, draw) {
+  'matter', './nodes', './utils', './boss', './movementPatterns', './boxGen', './draw'
+], function(Matter, nodes, utils, boss, movementPatterns, boxGen, draw) {
 // TODO: add collision filter so boxB doesn't hit walls
 // TODO: add health/score calc to game
 // TODO: add a couple different movement patterns to boxB
@@ -11,10 +11,10 @@ canvas = document.getElementById('canvas');
 ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-score = 0;
-scoreIncrease = 5;
-scoreC=100, scoreBase=1, scoreT=0, scoreRate=160;
-mult = utils.getIncreasingExponentialDecay(scoreC, scoreT, scoreBase, scoreRate);
+// score = 0;
+// scoreIncrease = 5;
+// scoreC=100, scoreBase=1, scoreT=0, scoreRate=160;
+// mult = utils.getIncreasingExponentialDecay(scoreC, scoreT, scoreBase, scoreRate);
 importantBodies = [];
 
 window.onresize = function(e) {
@@ -39,7 +39,7 @@ var engine = Engine.create();
 engine.world.gravity.x = 0;
 engine.world.gravity.y = 0;
 var boxA = boxGen.genPlayer(canvas.width, canvas.height);
-var boxB = boxGen.genBoss(boxA.body, canvas.width, canvas.height, constants.BOUNCE, constants.SLOW, constants.IGNORE_NODES, constants.BOSS_RADIUS, constants.BOSS_HEALTH, constants.BOSS_DRAW);
+var boxB = boxGen.genRandom(boxA.body, canvas.width, canvas.height);
 
 offset=25;
 ground = [
@@ -72,8 +72,6 @@ Events.on(engine, 'collisionEnd', function(event) {
     pair = [pairs[i].bodyA, pairs[i].bodyB];
     if(pair.includes(boxA.body)) {
       boxA.movementPattern.t++;
-      scoreT++;
-      mult= utils.getIncreasingExponentialDecay(scoreC, scoreT, scoreRate, scoreBase);
 
       if(pair.includes(nodes.getBegin()) || pair.includes(nodes.getEnd())) {
       }
@@ -81,11 +79,19 @@ Events.on(engine, 'collisionEnd', function(event) {
       }
       else if (ground.includes(pair[0]) || ground.includes(pair[1])) {
         boxA.movementPattern.t = 0;
-        scoreT=0;
+        // scoreT=0;
       }
       else if(pair.includes(boxB.body)) {
-        score += mult * scoreIncrease;
-        score= Math.round(score);
+        console.log(boxB.health - (boxA.body.speed/boxA.movementPattern.maxSpeed)*constants.BASE_DAMAGE);
+        boxB.health -= (boxA.body.speed/boxA.movementPattern.maxSpeed)*constants.BASE_DAMAGE;
+        if(boxB.health <= 0) {
+          console.log("he's deeaaad");
+          importantBodies.splice(importantBodies.indexOf(boxB.body), 1);
+          World.remove(engine.world, boxB.body);
+          boxB = boxGen.genRandom(cavnas.width, canvas.height);
+          World.add(engine.world, boxB.body);
+          importantBodies.push(boxB.body);
+        }
       }
     }
   }
@@ -104,10 +110,6 @@ Engine.run(engine);
     window.requestAnimationFrame(render);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.font = "75px arial";
-    ctx.textAlign = "center";
-    ctx.fillText(score, canvas.width/2, canvas.height/2);
 
     boxA.draw(ctx);
     boxB.draw(ctx);
@@ -137,6 +139,14 @@ document.addEventListener('keyup', function(e) {
       World.remove(engine.world, wall);
       importantBodies.splice(importantBodies.indexOf(wall), 1);
     }
+  }
+  else if (e.key === 'r') {
+    importantBodies.splice(importantBodies.indexOf(boxB.body), 1);
+    World.remove(engine.world, boxB.body);
+    boxB = boxGen.genRandom(cavnas.width, canvas.height);
+    World.add(engine.world, boxB.body);
+    importantBodies.push(boxB.body);
+    
   }
 });
 });
